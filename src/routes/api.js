@@ -3,8 +3,10 @@ import {
   getAllProducts,
   getProductById,
   createProduct,
+  createProducts,
   updateProduct,
   deleteProduct,
+  deleteProducts,
 } from "../controllers/productController.js";
 import {
   getAllUsers,
@@ -19,8 +21,10 @@ const router = express.Router();
 router.get("/products", getAllProducts);
 router.get("/products/:id", getProductById);
 router.post("/products", createProduct);
+router.post("/products/batch", createProducts);
 router.patch("/products/:id", updateProduct);
 router.delete("/products/:id", deleteProduct);
+router.delete("/products", deleteProducts);
 
 router.get("/users", getAllUsers);
 router.get("/users/:id", getUserById);
