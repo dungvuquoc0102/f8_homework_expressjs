@@ -40,6 +40,7 @@ export const createProducts = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -77,5 +78,6 @@ export const deleteProducts = async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
