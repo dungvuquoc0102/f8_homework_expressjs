@@ -3,7 +3,7 @@ import { z } from "zod";
 const CategorySchema = z.object({
   title: z.string(),
   description: z.string(),
-  products: z.array(z.string().optional()),
+  products: z.array(z.string().optional()).default([]),
   isHidden: z.boolean().default(false),
   deletedAt: z.string().datetime().nullable().default(null),
 });
