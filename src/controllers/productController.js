@@ -1,83 +1,125 @@
-import Product from "../models/ProductSchema.js";
+import Category from "../models/Category.js";
+import Product from "../models/Product.js";
+import {
+  handleSucessResponse,
+  handleCreatedResponse,
+  handleInvalidRequestError,
+  handleNotFoundError,
+  handleServerError,
+} from "../utils/httpResponses.js";
 
-export const getAllProducts = async (req, res) => {
+export const getAllProducts = async (_, res, next) => {
   try {
-    const products = await Product.find();
-    res.status(200).json({ message: "Success", data: products });
+    const products = await Product.find().populate("categoryId");
+    handleSucessResponse(res, products);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    next();
   }
 };
 
 export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.status(200).json({ message: "Success", data: product });
+    const { id } = req.params;
+    if (!id) {
+      handleInvalidRequestError(res);
+    }
+    const product = await Product.findById(req.params.id).populate(
+      "categoryId",
+    );
+    if (!product) {
+      return handleNotFoundError(res);
+    }
+    handleSucessResponse(res, product);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    handleServerError(res, error);
   }
 };
 
 export const createProduct = async (req, res) => {
   try {
+    const { categoryId } = req.body;
+    if (!categoryId) {
+      let category = await Category.findOne({ title: "Uncategorized" });
+      if (!category) {
+        category = await Category.create({ title: "Uncategorized" });
+      }
+      req.body.categoryId = category._id;
+    }
     const product = await Product.create(req.body);
-    res.status(201).json({ message: "Success", data: product });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const createProducts = async (req, res) => {
-  try {
-    const products = await Product.insertMany(req.body);
-    res.status(201).json({
-      message: "Success",
-      data: products,
+    if (!product) {
+      handleInvalidRequestError(res);
+    }
+    await Category.findByIdAndUpdate(categoryId, {
+      $push: { products: product._id },
     });
+    handleCreatedResponse(res, product);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
+    handleServerError(res, error);
   }
 };
 
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.status(200).json({ message: "Success", data: product });
+    const { title, price, categoryId, description } = req.body;
+    const { id } = req.params;
+    if (!id) {
+      return handleInvalidRequestError(res);
+    }
+
+    const oldProduct = await Product.findById(id);
+    if (!oldProduct) {
+      return handleNotFoundError(res);
+    }
+
+    let product;
+    if (title || price || categoryId || description) {
+      product = await Product.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
+      if (oldProduct.categoryId !== categoryId) {
+        await Category.findByIdAndUpdate(oldProduct.categoryId, {
+          $pull: { products: id },
+        });
+        await Category.findByIdAndUpdate(categoryId, {
+          $push: { products: id },
+        });
+      }
+    } else {
+      product = await Product.findByIdAndUpdate(
+        id,
+        {
+          isHidden: true,
+          deletedAt: Date.now(),
+        },
+        {
+          new: true,
+        },
+      );
+    }
+    if (!product) {
+      return handleNotFoundError(res);
+    }
+    handleSucessResponse(res, product);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    handleServerError(res, error);
   }
 };
 
 export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Success", data: product });
+    const { id } = req.params;
+    if (!id) {
+      return handleInvalidRequestError(res);
+    }
+    const product = await Product.findByIdAndDelete(id);
+    if (!product) {
+      return handleNotFoundError(res);
+    }
+    await Category.findByIdAndUpdate(product.categoryId, {
+      $pull: { products: id },
+    });
+    handleSucessResponse(res, product);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const deleteProducts = async (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!ids || !Array.isArray(ids))
-      return res.status(400).json({ message: "Invalid request" });
-    const data = await Product.deleteMany({ _id: { $in: ids } });
-    if (!data)
-      return res.status(200).json({ message: "Failed to delele products" });
-    res.status(200).json(data);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
+    handleServerError(res, error);
   }
 };
