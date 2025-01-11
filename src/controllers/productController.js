@@ -1,5 +1,5 @@
 import Category from "../models/Category.js";
-import Product from "../models/product.js";
+import Product from "../models/Product.js";
 import {
   handleSucessResponse,
   handleCreatedResponse,
