@@ -1,19 +1,16 @@
 import { Router } from "express";
-import validBodyMiddleware from "../middlewares/validBodyMiddleware.js";
+import validateReqBody from "../middlewares/validateReqBody.js";
 import { loginSchema, registerSchema } from "../validations/authSchema.js";
 import authController from "../controllers/authController.js";
 
 const authRoutes = Router();
 
+//route with middleware
 authRoutes.post(
   "/register",
-  validBodyMiddleware(registerSchema),
-  authController.register
+  validateReqBody(registerSchema),
+  authController.register,
 );
-authRoutes.post(
-  "/login",
-  validBodyMiddleware(loginSchema),
-  authController.login
-);
+authRoutes.post("/login", validateReqBody(loginSchema), authController.login);
 
 export default authRoutes;

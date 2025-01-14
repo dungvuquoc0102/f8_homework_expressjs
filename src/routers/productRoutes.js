@@ -1,26 +1,38 @@
 import { Router } from "express";
-import {
-  getAllProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "../controllers/productController.js";
+import productController from "../controllers/productController.js";
 import ProductSchema, {
   PartialProductSchema,
 } from "../validations/productSchema.js";
-import validBodyMiddleware from "../middlewares/validBodyMiddleware.js";
+import validateReqBody from "../middlewares/validateReqBody.js";
+import verifyUser from "../middlewares/verifyUser.js";
+import checkPermission from "../middlewares/checkPermission.js";
 
 const productRoutes = Router();
 
-productRoutes.get("", getAllProducts);
-productRoutes.get("/:id", getProductById);
-productRoutes.post("", validBodyMiddleware(ProductSchema), createProduct);
+//route without middleware
+productRoutes.get("", productController.getAllProducts);
+productRoutes.get("/:id", productController.getProductById);
+
+//route with middleware
+productRoutes.post(
+  "",
+  verifyUser,
+  checkPermission,
+  validateReqBody(ProductSchema),
+  productController.createProduct,
+);
 productRoutes.patch(
   "/:id",
-  validBodyMiddleware(PartialProductSchema),
-  updateProduct,
+  verifyUser,
+  checkPermission,
+  validateReqBody(PartialProductSchema),
+  productController.updateProduct,
 );
-productRoutes.delete("/:id", deleteProduct);
+productRoutes.delete(
+  "/:id",
+  verifyUser,
+  checkPermission,
+  productController.deleteProduct,
+);
 
 export default productRoutes;
