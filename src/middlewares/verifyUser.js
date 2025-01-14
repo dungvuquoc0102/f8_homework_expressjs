@@ -9,18 +9,22 @@ const verifyUser = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
     handleRes.handleInvalidRequestError(res);
+    return;
   }
 
   //s2: verify token
+  console.log(token);
   const decodedData = jwt.verify(token, process.env.JWT_SECRET);
   if (!decodedData) {
     handleRes.handleInvalidRequestError(res);
+    return;
   }
 
   //s3: get user
   const user = await User.findById(decodedData._id);
   if (!user) {
     handleRes.handleInvalidRequestError(res);
+    return;
   }
 
   //s4: hide password
